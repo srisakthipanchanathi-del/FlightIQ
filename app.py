@@ -23,7 +23,11 @@ sys.path.append(str(BASE_DIR))
 
 from src.recommender import FlightRecommender, load_recommender_dataset, get_flight_recommendations
 
-app = FastAPI(title="FlightIQ API", description="AI Travel Price Intelligence Engine API", version="2.0.0")
+app = FastAPI(title="FlightIQ API", description="AI Travel Price Intelligence Engine API", version="2.0.1")
+
+@app.get("/api/version")
+def get_version():
+    return {"status": "ok", "version": "2.0.1", "build": "deployment-fix-v2"}
 
 # Paths
 MODEL_PATH = BASE_DIR / "models" / "flight_price_model.joblib"
