@@ -299,6 +299,9 @@ def predict_flight_price(req: PredictionRequest):
 @app.post("/api/recommend")
 def recommend_flights(req: RecommendationRequest):
     """Run two-stage flight recommendation engine."""
+    global recommender_engine
+    if recommender_engine is None and not df_raw.empty:
+        recommender_engine = FlightRecommender(data=df_raw)
     if recommender_engine is None:
         raise HTTPException(status_code=500, detail="Recommender engine not available.")
 
