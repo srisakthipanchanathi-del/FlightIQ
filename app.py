@@ -1,11 +1,14 @@
 """
-app.py — FlightIQ AI Travel Price Intelligence Engine (Render Deploy v2.0.2)
+app.py
+------
+FlightIQ — AI Travel Price Intelligence
 FastAPI backend server for serving API endpoints, static assets, and ML model inference.
 """
 
 import sys
 from pathlib import Path
 import json
+import logging
 import joblib
 import pandas as pd
 import numpy as np
@@ -15,17 +18,17 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 from typing import Optional, Any, Dict, List
 
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("FlightIQ")
+
 # Add workspace to path
 BASE_DIR = Path(__file__).resolve().parent
 sys.path.append(str(BASE_DIR))
 
 from src.recommender import FlightRecommender, load_recommender_dataset, get_flight_recommendations
 
-app = FastAPI(title="FlightIQ API", description="AI Travel Price Intelligence Engine API", version="2.0.1")
-
-@app.get("/api/version")
-def get_version():
-    return {"status": "ok", "version": "2.0.1", "build": "deployment-fix-v2"}
+app = FastAPI(title="FlightIQ API", description="AI Travel Price Intelligence Engine API", version="2.0.0")
 
 # Paths
 MODEL_PATH = BASE_DIR / "models" / "flight_price_model.joblib"
@@ -43,68 +46,23 @@ for path in [DATASET_PATH, RAW_DATASET_PATH, ROOT_DATASET_PATH]:
         try:
             df_raw = load_recommender_dataset(path)
             recommender_engine = FlightRecommender(data=df_raw)
-            print(f"Successfully loaded dataset from {path} ({len(df_raw)} records)")
+            logger.info(f"Successfully loaded dataset from {path} ({len(df_raw)} records)")
             break
         except Exception as e:
-            print(f"Warning loading dataset from {path}: {e}")
+            logger.warning(f"Warning loading dataset from {path}: {e}")
 
-# Load model pipeline safely with fallbacks
+# Load exact trained model pipeline safely
 model_pipeline = None
 
-def init_model_pipeline():
-    global model_pipeline
-    if MODEL_PATH.exists():
-        try:
-            model_pipeline = joblib.load(MODEL_PATH)
-            print(f"Successfully loaded model pipeline from {MODEL_PATH}")
-            return model_pipeline
-        except Exception as e:
-            print(f"Error loading model pipeline from {MODEL_PATH}: {e}")
-
-    # Fallback model fitting if pickle load fails
-    if not df_raw.empty:
-        try:
-            print("Fitting fallback Gradient Boosting pipeline from dataset...")
-            from sklearn.ensemble import GradientBoostingRegressor
-            from sklearn.compose import ColumnTransformer
-            from sklearn.pipeline import Pipeline
-            from sklearn.impute import SimpleImputer
-            from sklearn.preprocessing import StandardScaler, OneHotEncoder
-
-            num_cols = ["Distance_km", "Duration_Minutes", "Total_Stops_Numeric", "Days_Before_Departure",
-                        "Departure_Time_Minutes", "Arrival_Time_Minutes", "Departure_Month", "Departure_DayOfWeek_Num", "Passenger_Count"]
-            cat_cols = ["Airline", "Source", "Destination", "Travel_Class", "Season", "Weekday", "Aircraft_Type", "Booking_Channel"]
-
-            num_cols = [c for c in num_cols if c in df_raw.columns]
-            cat_cols = [c for c in cat_cols if c in df_raw.columns]
-
-            X = df_raw[num_cols + cat_cols]
-            y = df_raw["Price"]
-
-            preprocessor = ColumnTransformer(
-                transformers=[
-                    ("num", Pipeline([("imputer", SimpleImputer(strategy="median")), ("scaler", StandardScaler())]), num_cols),
-                    ("cat", Pipeline([("imputer", SimpleImputer(strategy="most_frequent")), ("encoder", OneHotEncoder(handle_unknown="ignore", sparse_output=False))]), cat_cols)
-                ]
-            )
-
-            model_pipeline = Pipeline([
-                ("preprocessor", preprocessor),
-                ("model", GradientBoostingRegressor(n_estimators=50, max_depth=4, random_state=42))
-            ])
-
-            sample_size = min(15000, len(X))
-            sample_df = X.sample(n=sample_size, random_state=42)
-            sample_y = y.loc[sample_df.index]
-            model_pipeline.fit(sample_df, sample_y)
-            print(f"Successfully fit fallback model pipeline on {sample_size} records.")
-            return model_pipeline
-        except Exception as e:
-            print(f"Error training fallback model: {e}")
-
-    return None
-
-model_pipeline = init_model_pipeline()
+if MODEL_PATH.exists():
+    try:
+        model_pipeline = joblib.load(MODEL_PATH)
+        logger.info(f"Successfully loaded trained model pipeline from {MODEL_PATH}")
+    except Exception as e:
+        logger.error(f"Failed to load model pipeline from {MODEL_PATH}: {e}", exc_info=True)
+        model_pipeline = None
+else:
+    logger.error(f"Model file does not exist at expected path: {MODEL_PATH}")
 
 
 class PredictionRequest(BaseModel):
@@ -150,7 +108,7 @@ def serve_root_index():
 
 @app.get("/api/kpi")
 def get_kpi_metrics():
-    """Return dataset KPI metrics including 6 required KPIs."""
+    """Return dataset KPI metrics including required KPIs."""
     if df_raw.empty:
         raise HTTPException(status_code=500, detail="Dataset not loaded.")
     
@@ -208,11 +166,10 @@ def get_dropdown_options():
 
 @app.post("/api/predict")
 def predict_flight_price(req: PredictionRequest):
-    """Predict flight price using saved scikit-learn model pipeline or domain estimation fallback."""
-    global model_pipeline
-
+    """Predict flight price using saved trained scikit-learn model pipeline."""
     if model_pipeline is None:
-        model_pipeline = init_model_pipeline()
+        logger.error("Prediction request received but model_pipeline is None.")
+        raise HTTPException(status_code=500, detail="Model pipeline not available.")
 
     dist = req.distance_km
     if dist is None:
@@ -224,35 +181,31 @@ def predict_flight_price(req: PredictionRequest):
         if dist is None or np.isnan(dist):
             dist = max(300.0, req.duration_minutes * 8.5)
 
-    try:
-        if model_pipeline is not None:
-            input_dict = {
-                "Distance_km": float(dist),
-                "Duration_Minutes": float(req.duration_minutes),
-                "Total_Stops_Numeric": float(req.total_stops),
-                "Days_Before_Departure": float(req.days_before_departure),
-                "Departure_Time_Minutes": float(req.departure_time_minutes),
-                "Arrival_Time_Minutes": float(req.arrival_time_minutes),
-                "Departure_Month": float(req.departure_month),
-                "Departure_DayOfWeek_Num": float(req.departure_day_of_week_num),
-                "Passenger_Count": float(req.passenger_count),
-                "Airline": req.airline,
-                "Source": req.source,
-                "Destination": req.destination,
-                "Travel_Class": req.travel_class,
-                "Season": req.season,
-                "Weekday": req.weekday,
-                "Aircraft_Type": req.aircraft_type,
-                "Booking_Channel": req.booking_channel,
-            }
-            input_df = pd.DataFrame([input_dict])
-            pred_val = float(model_pipeline.predict(input_df)[0])
-        else:
-            # Domain pricing heuristic fallback
-            class_mult = 4.2 if "First" in req.travel_class else (3.1 if "Business" in req.travel_class else (1.8 if "Premium" in req.travel_class else 1.0))
-            pred_val = class_mult * (3000.0 + dist * 5.2 + req.duration_minutes * 12.0 + (30 - min(30, req.days_before_departure)) * 150)
+    input_dict = {
+        "Distance_km": float(dist),
+        "Duration_Minutes": float(req.duration_minutes),
+        "Total_Stops_Numeric": float(req.total_stops),
+        "Days_Before_Departure": float(req.days_before_departure),
+        "Departure_Time_Minutes": float(req.departure_time_minutes),
+        "Arrival_Time_Minutes": float(req.arrival_time_minutes),
+        "Departure_Month": float(req.departure_month),
+        "Departure_DayOfWeek_Num": float(req.departure_day_of_week_num),
+        "Passenger_Count": float(req.passenger_count),
+        "Airline": req.airline,
+        "Source": req.source,
+        "Destination": req.destination,
+        "Travel_Class": req.travel_class,
+        "Season": req.season,
+        "Weekday": req.weekday,
+        "Aircraft_Type": req.aircraft_type,
+        "Booking_Channel": req.booking_channel,
+    }
 
-        pred_val = max(500.0, round(pred_val, 2))
+    input_df = pd.DataFrame([input_dict])
+
+    try:
+        pred_val = float(model_pipeline.predict(input_df)[0])
+        pred_val = max(0.0, round(pred_val, 2))
 
         # Calculate category (LOW / TYPICAL / HIGH) based on class / route / dataset distribution
         subset = pd.DataFrame()
@@ -284,18 +237,8 @@ def predict_flight_price(req: PredictionRequest):
             "disclaimer": "Prediction generated from historical flight pricing patterns."
         }
     except Exception as e:
-        print(f"Prediction calculation error: {e}")
-        # Safe fallback calculation to guarantee HTTP 200 response
-        class_mult = 4.2 if "First" in req.travel_class else (3.1 if "Business" in req.travel_class else (1.8 if "Premium" in req.travel_class else 1.0))
-        fallback_val = max(500.0, round(class_mult * (3000.0 + (dist or 800) * 5.2 + req.duration_minutes * 12.0), 2))
-        return {
-            "status": "success",
-            "predicted_price": fallback_val,
-            "predicted_price_formatted": f"₹{round(fallback_val):,}",
-            "price_category": "TYPICAL",
-            "currency": "INR",
-            "disclaimer": "Prediction estimated from route parameters."
-        }
+        logger.error(f"Inference execution failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Inference execution error: {str(e)}")
 
 
 @app.post("/api/recommend")
