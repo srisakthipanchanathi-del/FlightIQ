@@ -271,27 +271,8 @@ FlightIQ/
 ---
 
 ###DEPLOYED LINK
-Open your web browser and navigate to:
-`https://flightiq-r8ly.onrender.com/`
 
----
-
-## Automated Verification
-
-To run the automated unit test suite:
-
-```bash
-python3 -m unittest discover tests/
-```
-
-Expected output:
-```text
-......
-----------------------------------------------------------------------
-Ran 6 tests in 0.450s
-
-OK
-```
+[Live Demo](https://flightiq-r8ly.onrender.com/)
 
 ---
 
