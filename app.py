@@ -1,7 +1,5 @@
 """
-app.py
-------
-FlightIQ — AI Travel Price Intelligence
+app.py — FlightIQ AI Travel Price Intelligence Engine (Render Deploy v2.0.2)
 FastAPI backend server for serving API endpoints, static assets, and ML model inference.
 """
 
