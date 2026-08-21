@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlightIQ — AI Travel Price Intelligence</title>
+  <meta name="description" content="Predict flight prices, understand pricing drivers, and discover the best flights using AI and historical flight data.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23159FE3%22><path d=%22M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z%22/></svg>">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar" id="navbar">
+    <div class="container nav-container">
+      <a href="#hero" class="nav-brand">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#159FE3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3.5c-.5-.5-2.5 0-4 1.5L13.5 8.5 5.3 6.7c-.7-.2-1.4.1-1.7.7l-.5.9 5.2 3.6-2.5 2.5-2.6-.7c-.4-.1-.8.1-1 .4l-.3.4 3.7 2.5 2.5 3.7.4-.3c.3-.2.5-.6.4-1l-.7-2.6 2.5-2.5 3.6 5.2.9-.5c.6-.3.9-1 .7-1.7z"/>
+        </svg>
+        <span>FlightIQ</span>
+      </a>
+
+      <button class="mobile-toggle" id="mobile-toggle" aria-label="Toggle Navigation">☰</button>
+
+      <ul class="nav-links" id="nav-links">
+        <li><a href="#overview" class="nav-link">Overview</a></li>
+        <li><a href="#explore" class="nav-link">Explore</a></li>
+        <li><a href="#predict" class="nav-link">Predict</a></li>
+        <li><a href="#recommend" class="nav-link">Recommend</a></li>
+        <li><a href="#insights" class="nav-link">Insights</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <button class="btn-nav" onclick="scrollToSection('predict')">
+          <span>Try Predictor</span> &rarr;
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero-section" id="hero">
+    <div class="container">
+      <div class="hero-content">
+        <div class="status-badge">
+          AI-POWERED TRAVEL INTELLIGENCE
+        </div>
+        <div class="hero-tag">FLIGHTIQ &bull; AI TRAVEL PRICE INTELLIGENCE</div>
+        <h1 class="hero-headline">
+          Fly Smarter.<br>
+          <span class="gold-text">Pay Better.</span>
+        </h1>
+        <p class="hero-description">
+          Predict flight prices, understand what drives fares, and discover the best flights for your journey.
+        </p>
+        <div class="hero-ctas">
+          <button class="btn-primary" onclick="scrollToSection('predict')">
+            <span>Predict Flight Price</span> &rarr;
+          </button>
+          <button class="btn-secondary" onclick="scrollToSection('recommend')">
+            <span>Find Best Flights</span> &rarr;
+          </button>
+        </div>
+
+        <div class="hero-stats-subtle">
+          <div class="stat-item-subtle">
+            <span class="val">93K+</span>
+            <span class="lbl">Flights Analyzed</span>
+          </div>
+          <div class="stat-item-subtle">
+            <span class="val">AI Model</span>
+            <span class="lbl">Price Intelligence</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Editorial Section: Flight Intelligence Statistics -->
+  <section class="section editorial-section" id="overview">
+    <div class="container">
+      <div class="section-header">
+        <div class="status-badge" style="border: none; background: #E0F2FE; color: #0369A1; margin-bottom: 12px;">
+          FLIGHT INTELLIGENCE
+        </div>
+        <h2 class="section-title">Better decisions start with better data.</h2>
+        <p class="section-subtitle">FlightIQ transforms historical flight data into price intelligence, prediction and personalized recommendations.</p>
+      </div>
+
+      <div class="editorial-stats-row">
+        <div class="ed-stat-card">
+          <div class="ed-stat-num" id="kpi-flights">93,083</div>
+          <div class="ed-stat-label">Flights analyzed</div>
+        </div>
+        <div class="ed-stat-card">
+          <div class="ed-stat-num" id="kpi-avg-price">₹72,990</div>
+          <div class="ed-stat-label">Average observed price</div>
+        </div>
+        <div class="ed-stat-card">
+          <div class="ed-stat-num" id="kpi-airlines">13</div>
+          <div class="ed-stat-label">Airlines</div>
+        </div>
+        <div class="ed-stat-card">
+          <div class="ed-stat-num" id="kpi-routes">308</div>
+          <div class="ed-stat-label">Routes</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Price Explorer Section -->
+  <section class="section explorer-section" id="explore">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Explore the fare landscape.</h2>
+        <p class="section-subtitle">Empirical insights discovered during exploratory data analysis. Click any chart to expand.</p>
+      </div>
+
+      <div class="compact-filter-bar">
+        <div class="filter-grid-compact">
+          <div class="form-group">
+            <label class="form-label" for="ex-airline">Airline</label>
+            <select id="ex-airline" class="form-select" onchange="filterExplorer()"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="ex-source">Origin</label>
+            <select id="ex-source" class="form-select" onchange="filterExplorer()"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="ex-dest">Destination</label>
+            <select id="ex-dest" class="form-select" onchange="filterExplorer()"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="ex-class">Travel Class</label>
+            <select id="ex-class" class="form-select" onchange="filterExplorer()"></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="charts-grid-bright">
+        <div class="chart-card-bright" data-chart-id="eda-travel-class">
+          <div class="chart-card-header-row">
+            <div class="chart-card-title">Travel Class Price Gap</div>
+            <span class="chart-expand-badge">Click to explore &rarr;</span>
+          </div>
+          <img src="/static/assets/eda/03_travel_class_vs_price.png" alt="Travel Class vs Price" class="chart-img" loading="lazy">
+        </div>
+
+        <div class="chart-card-bright" data-chart-id="eda-duration">
+          <div class="chart-card-header-row">
+            <div class="chart-card-title">Flight Duration & Price Correlation</div>
+            <span class="chart-expand-badge">Click to explore &rarr;</span>
+          </div>
+          <img src="/static/assets/eda/06_duration_vs_price.png" alt="Duration vs Price" class="chart-img" loading="lazy">
+        </div>
+
+        <div class="chart-card-bright" data-chart-id="eda-airline">
+          <div class="chart-card-header-row">
+            <div class="chart-card-title">Airline Pricing Differences</div>
+            <span class="chart-expand-badge">Click to explore &rarr;</span>
+          </div>
+          <img src="/static/assets/eda/02_airline_vs_price.png" alt="Airline vs Price" class="chart-img" loading="lazy">
+        </div>
+
+        <div class="chart-card-bright" data-chart-id="eda-days-before">
+          <div class="chart-card-header-row">
+            <div class="chart-card-title">Booking Window Impact (Days Before Departure)</div>
+            <span class="chart-expand-badge">Click to explore &rarr;</span>
+          </div>
+          <img src="/static/assets/eda/12_days_before_departure.png" alt="Days Before Departure" class="chart-img" loading="lazy">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Price Predictor Section -->
+  <section class="section predictor-section" id="predict">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Know the fare before you book.</h2>
+        <p class="section-subtitle">Real-time machine learning prediction using trained model pipeline.</p>
+      </div>
+
+      <div class="predict-split-grid">
+        <div class="bright-form-panel">
+          <form id="prediction-form" onsubmit="handlePrediction(event)">
+            <div class="form-grid-2col">
+              <div class="form-group">
+                <label class="form-label" for="p-source">Origin</label>
+                <select id="p-source" class="form-select" required></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="p-destination">Destination</label>
+                <select id="p-destination" class="form-select" required></select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="p-travel-class">Travel Class</label>
+                <select id="p-travel-class" class="form-select" required></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="p-airline">Airline</label>
+                <select id="p-airline" class="form-select" required></select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="p-days-before">Days Before Departure</label>
+                <input type="number" id="p-days-before" class="form-input" min="1" max="365" value="14" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="p-duration">Duration (Minutes)</label>
+                <input type="number" id="p-duration" class="form-input" min="30" max="1800" value="130" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="p-stops">Stops</label>
+                <select id="p-stops" class="form-select" required>
+                  <option value="0">0 (Non-Stop)</option>
+                  <option value="1">1 Stop</option>
+                  <option value="2">2+ Stops</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="p-month">Month</label>
+                <select id="p-month" class="form-select" required>
+                  <option value="1">January</option>
+                  <option value="2">February</option>
+                  <option value="3">March</option>
+                  <option value="4">April</option>
+                  <option value="5">May</option>
+                  <option value="6" selected>June</option>
+                  <option value="7">July</option>
+                  <option value="8">August</option>
+                  <option value="9">September</option>
+                  <option value="10">October</option>
+                  <option value="11">November</option>
+                  <option value="12">December</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="p-aircraft">Aircraft Type</label>
+                <select id="p-aircraft" class="form-select"></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="p-channel">Booking Channel</label>
+                <select id="p-channel" class="form-select"></select>
+              </div>
+
+              <button type="submit" class="btn-submit-predict" id="predict-btn">
+                Predict Flight Price &rarr;
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="result-card-bright">
+          <div class="result-tag">MODEL ESTIMATE</div>
+          <div class="result-headline-label">ESTIMATED FLIGHT PRICE</div>
+          <div class="result-price-val" id="pred-result-display">₹10,519</div>
+
+          <div class="result-range-indicator" id="result-range-box">
+            <span class="range-pill low">LOW</span>
+            <span class="range-pill typical" style="opacity: 0.5;">TYPICAL</span>
+            <span class="range-pill high" style="opacity: 0.5;">HIGH</span>
+          </div>
+
+          <div class="result-disclaimer">
+            Prediction generated from historical flight pricing patterns.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Price Drivers Section -->
+  <section class="section drivers-section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">What moves a flight price?</h2>
+        <p class="section-subtitle">Empirical factor rankings ordered by feature significance.</p>
+      </div>
+
+      <div class="drivers-editorial-list">
+        <div class="driver-item-editorial">
+          <div class="driver-rank-num">01</div>
+          <div class="driver-name">Distance</div>
+        </div>
+        <div class="driver-item-editorial">
+          <div class="driver-rank-num">02</div>
+          <div class="driver-name">Duration</div>
+        </div>
+        <div class="driver-item-editorial">
+          <div class="driver-rank-num">03</div>
+          <div class="driver-name">Travel Class</div>
+        </div>
+        <div class="driver-item-editorial">
+          <div class="driver-rank-num">04</div>
+          <div class="driver-name">Airline</div>
+        </div>
+        <div class="driver-item-editorial">
+          <div class="driver-rank-num">05</div>
+          <div class="driver-name">Route / Origin</div>
+        </div>
+        <div class="driver-item-editorial">
+          <div class="driver-rank-num">06</div>
+          <div class="driver-name">Stops</div>
+        </div>
+        <div class="driver-item-editorial">
+          <div class="driver-rank-num">07</div>
+          <div class="driver-name">Days Before Departure</div>
+        </div>
+        <div class="driver-item-editorial">
+          <div class="driver-rank-num">08</div>
+          <div class="driver-name">Season / Weekday</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Recommendations Section -->
+  <section class="section recommendations-section" id="recommend">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Find your best flight.</h2>
+        <p class="section-subtitle">Ranked flights tailored to your budget, timing, and travel preferences.</p>
+      </div>
+
+      <div class="compact-filter-bar">
+        <form id="recommend-form" onsubmit="handleRecommendation(event)">
+          <div class="filter-grid-compact">
+            <div class="form-group">
+              <label class="form-label" for="r-source">Origin</label>
+              <select id="r-source" class="form-select"></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="r-destination">Destination</label>
+              <select id="r-destination" class="form-select"></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="r-class">Travel Class</label>
+              <select id="r-class" class="form-select"></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="r-budget">Max Budget (₹)</label>
+              <input type="number" id="r-budget" class="form-input" placeholder="e.g. 25000" step="1000">
+            </div>
+          </div>
+          <button type="submit" class="btn-submit-predict" style="margin-top: 16px;">
+            Find Best Flights &rarr;
+          </button>
+        </form>
+      </div>
+
+      <div class="airline-booking-cards" id="rec-cards-container">
+        <!-- Rendered dynamically by app.js -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Model Insights Section -->
+  <section class="section insights-section" id="insights">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Prediction built for transparency.</h2>
+        <p class="section-subtitle">Evaluating architecture, error metrics, and global model feature importances. Click any chart to expand.</p>
+      </div>
+
+      <div class="editorial-stats-row" style="margin-bottom: 40px;">
+        <div class="ed-stat-card">
+          <div class="ed-stat-num" style="font-size: 1.8rem;" id="m-best-model">Gradient Boosting</div>
+          <div class="ed-stat-label">Best Model</div>
+        </div>
+        <div class="ed-stat-card">
+          <div class="ed-stat-num" id="m-r2">0.7049</div>
+          <div class="ed-stat-label">R² Score</div>
+        </div>
+        <div class="ed-stat-card">
+          <div class="ed-stat-num" id="m-mae">₹14,262</div>
+          <div class="ed-stat-label">MAE</div>
+        </div>
+        <div class="ed-stat-card">
+          <div class="ed-stat-num" id="m-rmse">₹40,262</div>
+          <div class="ed-stat-label">RMSE</div>
+        </div>
+      </div>
+
+      <div class="charts-grid-bright">
+        <div class="chart-card-bright" data-chart-id="model-comparison">
+          <div class="chart-card-header-row">
+            <div class="chart-card-title">Model Comparison</div>
+            <span class="chart-expand-badge">Click to explore &rarr;</span>
+          </div>
+          <img src="/static/assets/model/model_comparison.png" alt="Model Comparison" class="chart-img" loading="lazy">
+        </div>
+
+        <div class="chart-card-bright" data-chart-id="model-actual-vs-pred">
+          <div class="chart-card-header-row">
+            <div class="chart-card-title">Actual vs. Predicted Flight Prices</div>
+            <span class="chart-expand-badge">Click to explore &rarr;</span>
+          </div>
+          <img src="/static/assets/model/actual_vs_predicted.png" alt="Actual vs Predicted" class="chart-img" loading="lazy">
+        </div>
+      </div>
+
+      <!-- SHAP Explainability Section -->
+      <div style="margin-top: 60px;">
+        <div class="section-header">
+          <h2 class="section-title" style="font-size: 1.8rem;">Understand every prediction.</h2>
+          <p class="section-subtitle">SHAP explainability plots detailing feature impact on flight prices.</p>
+        </div>
+
+        <div class="charts-grid-bright">
+          <div class="chart-card-bright" data-chart-id="model-feature-importance">
+            <div class="chart-card-header-row">
+              <div class="chart-card-title">Feature Importance Analysis</div>
+              <span class="chart-expand-badge">Click to explore &rarr;</span>
+            </div>
+            <img src="/static/assets/explainability/feature_importance_native.png" alt="Feature Importance" class="chart-img" loading="lazy">
+          </div>
+
+          <div class="chart-card-bright" data-chart-id="model-shap">
+            <div class="chart-card-header-row">
+              <div class="chart-card-title">SHAP Beeswarm Plot</div>
+              <span class="chart-expand-badge">Click to explore &rarr;</span>
+            </div>
+            <img src="/static/assets/explainability/shap_beeswarm.png" alt="SHAP Beeswarm" class="chart-img" loading="lazy">
+          </div>
+        </div>
+
+        <div class="disclaimer-banner">
+          Feature importance indicates predictive contribution; it does not establish causation.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Final CTA Section -->
+  <section class="final-cta-section">
+    <div class="container">
+      <h2 class="final-cta-title">Ready to fly smarter?</h2>
+      <button class="btn-primary" onclick="scrollToSection('predict')">
+        <span>Launch FlightIQ</span> &rarr;
+      </button>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-brand">FlightIQ</div>
+      <p>AI Travel Price Intelligence &bull; Powered by Gradient Boosting Machine Learning</p>
+    </div>
+  </footer>
+
+  <!-- Reusable Chart Detail Modal -->
+  <div class="modal-overlay" id="chart-modal" aria-hidden="true">
+    <div class="modal-container" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h3 class="modal-title" id="modal-chart-title">Chart Title</h3>
+          <p class="modal-description" id="modal-chart-desc">Chart description</p>
+        </div>
+        <button class="modal-close-btn" id="modal-close-btn" aria-label="Close modal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-chart-wrapper">
+          <img id="modal-chart-img" src="" alt="Enlarged Chart" class="modal-chart-img">
+        </div>
+
+        <!-- Key Figures Section -->
+        <div>
+          <div class="explanation-heading" style="margin-bottom: 12px;">KEY FIGURES</div>
+          <div class="modal-figures-grid" id="modal-figures-grid"></div>
+        </div>
+
+        <!-- What This Tells You Section -->
+        <div class="modal-explanation-box">
+          <div class="explanation-heading">WHAT THIS TELLS YOU</div>
+          <div class="explanation-text" id="modal-explanation-text"></div>
+        </div>
+
+        <!-- Data Note -->
+        <div class="modal-data-note" id="modal-data-note">
+          Based on the FlightIQ cleaned dataset.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
