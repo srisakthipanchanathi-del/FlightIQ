@@ -54,6 +54,8 @@ for path in [DATASET_PATH, RAW_DATASET_PATH, ROOT_DATASET_PATH]:
 # Diagnostic logging & model initialization
 logger.info(f"MODEL_PATH: {MODEL_PATH}")
 logger.info(f"MODEL_EXISTS: {MODEL_PATH.exists()}")
+logger.info(f"DATA_PATH: {DATASET_PATH}")
+logger.info(f"DATA_EXISTS: {DATASET_PATH.exists()}")
 
 model_pipeline = None
 if MODEL_PATH.exists():
