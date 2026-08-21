@@ -113,6 +113,16 @@ def serve_root_index():
     raise HTTPException(status_code=404, detail="index.html not found")
 
 
+@app.get("/api/debug/model")
+def debug_model():
+    """Temporary diagnostic endpoint for inspecting loaded global model pipeline state."""
+    return {
+        "loaded": model_pipeline is not None,
+        "type": str(type(model_pipeline)),
+        "steps": list(model_pipeline.named_steps.keys()) if model_pipeline is not None and hasattr(model_pipeline, "named_steps") else []
+    }
+
+
 @app.get("/api/kpi")
 def get_kpi_metrics():
     """Return dataset KPI metrics including required KPIs."""
@@ -174,6 +184,12 @@ def get_dropdown_options():
 @app.post("/api/predict")
 def predict_flight_price(req: PredictionRequest):
     """Predict flight price using saved trained scikit-learn model pipeline."""
+    logger.info(f"PREDICT model_pipeline: {model_pipeline}")
+    logger.info(f"PREDICT model_pipeline type: {type(model_pipeline)}")
+    logger.info(f"PREDICT model_pipeline is None: {model_pipeline is None}")
+    if model_pipeline is not None and hasattr(model_pipeline, "named_steps"):
+        logger.info(f"PREDICT model steps: {list(model_pipeline.named_steps.keys())}")
+
     if model_pipeline is None:
         logger.error("Prediction request failed: model_pipeline is None")
         raise HTTPException(status_code=500, detail="Model pipeline not available.")
