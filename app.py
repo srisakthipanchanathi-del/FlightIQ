@@ -51,18 +51,39 @@ for path in [DATASET_PATH, RAW_DATASET_PATH, ROOT_DATASET_PATH]:
         except Exception as e:
             logger.warning(f"Warning loading dataset from {path}: {e}")
 
-# Load exact trained model pipeline safely
-model_pipeline = None
+# Load exact trained model pipeline safely with path resolution & caching
+_cached_model_pipeline = None
+_model_load_error = None
 
-if MODEL_PATH.exists():
-    try:
-        model_pipeline = joblib.load(MODEL_PATH)
-        logger.info(f"Successfully loaded trained model pipeline from {MODEL_PATH}")
-    except Exception as e:
-        logger.error(f"Failed to load model pipeline from {MODEL_PATH}: {e}", exc_info=True)
-        model_pipeline = None
-else:
-    logger.error(f"Model file does not exist at expected path: {MODEL_PATH}")
+def get_model_pipeline():
+    global _cached_model_pipeline, _model_load_error
+    if _cached_model_pipeline is not None:
+        return _cached_model_pipeline, None
+
+    candidate_paths = [
+        MODEL_PATH,
+        Path.cwd() / "models" / "flight_price_model.joblib",
+        BASE_DIR / "flight_price_model.joblib",
+        Path.cwd() / "flight_price_model.joblib"
+    ]
+
+    for p in candidate_paths:
+        if p.exists():
+            try:
+                _cached_model_pipeline = joblib.load(p)
+                logger.info(f"Successfully loaded trained model pipeline from {p}")
+                return _cached_model_pipeline, None
+            except Exception as e:
+                _model_load_error = f"Error unpickling {p}: {str(e)}"
+                logger.error(_model_load_error, exc_info=True)
+                return None, _model_load_error
+
+    _model_load_error = f"Model file not found. Tried paths: {[str(p) for p in candidate_paths]}"
+    logger.error(_model_load_error)
+    return None, _model_load_error
+
+# Pre-load on startup
+get_model_pipeline()
 
 
 class PredictionRequest(BaseModel):
@@ -167,9 +188,11 @@ def get_dropdown_options():
 @app.post("/api/predict")
 def predict_flight_price(req: PredictionRequest):
     """Predict flight price using saved trained scikit-learn model pipeline."""
-    if model_pipeline is None:
-        logger.error("Prediction request received but model_pipeline is None.")
-        raise HTTPException(status_code=500, detail="Model pipeline not available.")
+    model, err_msg = get_model_pipeline()
+
+    if model is None:
+        logger.error(f"Prediction error: {err_msg}")
+        raise HTTPException(status_code=500, detail=f"Model loading error: {err_msg}")
 
     dist = req.distance_km
     if dist is None:
@@ -204,7 +227,7 @@ def predict_flight_price(req: PredictionRequest):
     input_df = pd.DataFrame([input_dict])
 
     try:
-        pred_val = float(model_pipeline.predict(input_df)[0])
+        pred_val = float(model.predict(input_df)[0])
         pred_val = max(0.0, round(pred_val, 2))
 
         # Calculate category (LOW / TYPICAL / HIGH) based on class / route / dataset distribution
