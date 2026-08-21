@@ -12,6 +12,12 @@ document.addEventListener('DOMContentLoaded', () => {
   initChartModals();
 });
 
+/* Environment-Aware API Base URL Helper */
+function getApiUrl(endpoint) {
+  const cleanPath = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
+  return window.location.origin + cleanPath;
+}
+
 /* Navigation & Mobile Menu */
 function initNavbar() {
   const toggleBtn = document.getElementById('mobile-toggle');
@@ -229,7 +235,7 @@ function closeChartModal() {
 /* Fetch KPI Metrics */
 async function fetchKPIs() {
   try {
-    const res = await fetch('/api/kpi');
+    const res = await fetch(getApiUrl('/api/kpi'));
     if (!res.ok) return;
     const data = await res.json();
     if (data.status === 'success' && data.kpis) {
@@ -254,7 +260,7 @@ async function fetchKPIs() {
 /* Populate Form Dropdowns */
 async function fetchDropdownOptions() {
   try {
-    const res = await fetch('/api/options');
+    const res = await fetch(getApiUrl('/api/options'));
     if (!res.ok) return;
     const opts = await res.json();
 
@@ -311,7 +317,7 @@ function filterExplorer() {
 /* Model Metadata */
 async function fetchModelMetadata() {
   try {
-    const res = await fetch('/api/metadata');
+    const res = await fetch(getApiUrl('/api/metadata'));
     if (!res.ok) return;
     const meta = await res.json();
     if (meta.best_model && document.getElementById('m-best-model')) {
@@ -357,7 +363,7 @@ async function handlePrediction(e) {
   };
 
   try {
-    const res = await fetch('/api/predict', {
+    const res = await fetch(getApiUrl('/api/predict'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -418,7 +424,7 @@ async function fetchAndRenderRecommendations(payload) {
   container.innerHTML = '<div style="text-align: center; color: #657386; padding: 40px;">Searching flight options...</div>';
 
   try {
-    const res = await fetch('/api/recommend', {
+    const res = await fetch(getApiUrl('/api/recommend'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
