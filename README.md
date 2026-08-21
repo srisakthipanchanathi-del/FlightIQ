@@ -270,36 +270,9 @@ FlightIQ/
 
 ---
 
-## Installation & Setup Instructions
-
-### 1. Prerequisites
-Ensure Python 3.10+ and Git are installed on your system.
-
-### 2. Clone the Repository
-```bash
-git clone https://github.com/srisakthipanchanathi-del/FlightIQ.git
-cd FlightIQ
-```
-
-### 3. Create a Virtual Environment
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### 4. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
-
-### 5. Launch the Web Application
-```bash
-python3 -m uvicorn app:app --host 0.0.0.0 --port 8000
-```
-
-### 6. Access the Application
+###DEPLOYED LINK
 Open your web browser and navigate to:
-`http://127.0.0.1:8000`
+`https://flightiq-r8ly.onrender.com/`
 
 ---
 
